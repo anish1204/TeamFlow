@@ -1,0 +1,8 @@
+1. User Authentication
+User--
+create 
+update 
+get 
+delete (by admin superadmin) 
+
+User Schema -- id , name , email , username , password , role 
