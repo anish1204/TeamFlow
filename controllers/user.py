@@ -1,9 +1,20 @@
 from sqlalchemy.orm import Session
 from models.user import User
+from fastapi import HTTPException
 from schemas.user import UserCreate, UserOut
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Create user 
+
+def get_user_by_id(db:Session,user_id:int):
+    db_user = db.query(User).filter(user_id == User.id).first()
+
+    if not db_user:
+        raise HTTPException(status_code=404,detail="User Not Found")
+    
+    return db_user
 
 
 ### Create a new user in the database

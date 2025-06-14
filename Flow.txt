@@ -1,8 +1,67 @@
 1. User Authentication
 User--
 create 
-update 
+update ***
 get 
-delete (by admin superadmin) 
+delete (by admin superadmin) ***
 
 User Schema -- id , name , email , username , password , role 
+
+
+2. Messaging System
+
+Group 
+id  name  users 
+
+
+Message
+id  content sender_id reciever_id group_id
+
+
+Done
+
+
+***API Routes **** (From P2P)
+Post:
+message/{reciever_id}
+
+Get:
+message/{user_id}
+
+Update:
+message/{message_id}
+
+Delete
+message/{message_id}
+
+
+(Group Chat)
+Post 
+group/create
+(the user will be a admin)
+
+Delete 
+group/delete/{group_id}
+(the user will be a admin)
+
+Update 
+group/update/{group_id}
+(the user will be a admin)
+
+Add member (Patch)
+group/update/{group_id}/{user_id}
+(the user will be a admin)
+
+
+Get all Groups
+
+Post 
+group/message/{group_id}
+
+Get all
+group/message/{group_id}
+
+Delete
+group/{group_id}/{message_id}
+Check if message is of that person who sent or atleast he's an admin
+
