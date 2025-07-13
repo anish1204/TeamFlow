@@ -5,6 +5,10 @@ from datetime import datetime
 class MessageCreate(BaseModel):
     content: str
 
+class MessageResponse(BaseModel):
+    content : str
+    
+
 class MessageOut(BaseModel):
     id: int
     content: str

@@ -7,6 +7,7 @@ from schemas.message import MessageCreate, MessageOut
 from db import get_db
 from utils.auth import get_current_user
 from typing import List
+from sqlalchemy import or_, and_
 
 router = APIRouter(prefix="", tags=["Messages"])
 
@@ -105,6 +106,25 @@ def update_msg(
 
 #     db.commit()
 #     return {"message": f"Message sent to {len(recipients)} users in group '{group.name}'"}
+
+@router.get("/messages/{receiver_id}")
+def get_chat_messages(
+   receiver_id: int,
+   curr_user: User = Depends(get_current_user),
+   db: Session = Depends(get_db),
+):
+   user_id = curr_user.id
+
+   messages = db.query(Message).filter(
+       or_(
+           and_(Message.sender_id == user_id, Message.receiver_id == receiver_id),
+           and_(Message.sender_id == receiver_id, Message.receiver_id == user_id),
+       )
+   ).order_by(Message.id.asc()).all()
+
+   return messages
+   
+   
 
 
 # 3. Get all messages for current user

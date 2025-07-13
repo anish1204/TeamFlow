@@ -21,6 +21,12 @@ class UserBasicResponse(BaseModel):
     username: str
     name: str
 
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+    username: str
+
     
 
 class UserOut(UserBase):

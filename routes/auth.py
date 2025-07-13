@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Request, HTTPException, status
 from sqlalchemy.orm import Session
-from schemas.user import UserCreate, UserOut, UserUpdate
+from schemas.user import UserCreate, UserOut, UserUpdate,UserResponse
+from models.user import User
 from db import get_db
 from utils.auth import get_current_user
 from controllers import user as user_controller
@@ -67,4 +68,40 @@ def read_current_user(current_user=Depends(get_current_user)):
     return {
         "id": current_user.id,
         "email": current_user.email,
+        "name":current_user.name,
+        "username":current_user.username
     }
+
+
+
+### add friends
+@router.post("/friend/add/{username}")
+def add_friend(username: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+
+    # Fetch the friend by username
+    friend = db.query(User).filter(User.username == username).first()
+
+    if not friend:
+        raise HTTPException(status_code=404, detail="Friend not found")
+
+    if friend.id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot add yourself as a friend")
+
+    if friend in current_user.friends:
+        raise HTTPException(status_code=400, detail="Already friends")
+
+    # Add to friends list
+    current_user.friends.append(friend)
+
+    db.commit()
+    db.refresh(current_user)
+
+    return {"msg": f"You are now friends with {friend.name}"}
+
+
+@router.get("/friend/list", response_model=list[UserResponse])
+def list_friends(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return current_user.friends

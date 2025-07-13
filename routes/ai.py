@@ -1,0 +1,78 @@
+# routes/ai.py
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from db import get_db
+from models.message import Message
+from models.user import User
+from utils.auth import get_current_user
+# from cohere import Client
+
+from langchain_community.llms import Ollama
+from langchain_core.prompts import PromptTemplate
+
+router = APIRouter()
+
+@router.post("/summarize/user/{other_user_id}")
+def summarize_private_chat(
+    other_user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # Step 1: Fetch chat messages between users
+    messages = db.query(Message).filter(
+        ((Message.sender_id == current_user.id) & (Message.receiver_id == other_user_id)) |
+        ((Message.sender_id == other_user_id) & (Message.receiver_id == current_user.id))
+    ).order_by(Message.id.asc()).all()
+
+    if not messages:
+        return {"summary": "No messages found."}
+
+    # Step 2: Format chat text
+    chat_text = "\n".join([f"User {msg.sender_id}: {msg.content}" for msg in messages])
+
+    # Step 3: Build prompt
+    prompt_text = f"""
+You are a smart assistant.
+
+Given the following chat transcript, extract and summarize:
+1. ✅ Tasks to be done
+2. 📅 Meetings scheduled (with time if mentioned)
+3. 💡 Key decisions or conclusions
+
+Chat:
+{chat_text}
+
+Summarize now:
+"""
+
+    # Step 4: Call local LLaMA 3 via Ollama
+    llm = Ollama(model="mistral")
+    summary = llm.invoke(prompt_text)
+
+    return {"summary": summary}
+
+
+@router.post("/ai/message/summarize")
+def summarize_conv(payload: dict):
+    from cohere import Client
+
+    co = Client("API_KEY")
+
+    messages = payload["messages"]
+    conversation_text = "\n".join([f"User {m['sender_id']}: {m['content']}" for m in messages])
+
+    if len(conversation_text) < 250:
+        return {
+            "summary": "Conversation is too short to summarize. Try adding more messages."
+        }
+
+    response = co.summarize(
+        text=conversation_text,
+        length='medium',
+        format='paragraph',
+        extractiveness='low'
+    )
+
+    return {"summary": response.summary}
+
