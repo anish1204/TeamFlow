@@ -1,17 +1,20 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.middleware.cors import CORSMiddleware  # 👈 CORS middleware
-from typing import List, Optional
-import models
-from routes import auth, group, message,ai
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer
+import socketio
 
-app = FastAPI()
+from routes import auth, group, message, ai
 
-# 👇 Add CORS Middleware here
-app.add_middleware(
+# Socket.IO server
+sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
+
+# FastAPI app
+fastapi_app = FastAPI()
+
+# CORS
+fastapi_app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 👈 Allow frontend origin
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -19,8 +22,14 @@ app.add_middleware(
 
 bearer_scheme = HTTPBearer()
 
-# Include your routers
-app.include_router(auth.router, prefix='/auth')
-app.include_router(group.router, prefix='/group') 
-app.include_router(message.router, prefix='/message')  
-app.include_router(ai.router, prefix="/ai")
+# Routers
+fastapi_app.include_router(auth.router, prefix='/auth')
+fastapi_app.include_router(group.router, prefix='/group')
+fastapi_app.include_router(message.router, prefix='/message')
+fastapi_app.include_router(ai.router, prefix='/ai')
+
+# Mount FastAPI under Socket.IO
+app = socketio.ASGIApp(sio, other_asgi_app=fastapi_app)
+
+# Import socket events
+import sockets.events
