@@ -30,3 +30,11 @@ async def room_message(sid, data):
     if room and message and sender:
         print(f"📨 Message from {sender} to room {room}: {message}")
         await sio.emit("room_message", data, room=room)
+
+@sio.event
+async def join(sid, data):
+    """data = { 'room': 'user_1' }"""
+    room = data.get("room")
+    if room:
+        sio.enter_room(sid, room)
+        print(f"✅ {sid} joined {room}")
